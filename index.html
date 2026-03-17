@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FRC Battery Pit Tracker</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+        }
+
+        h1 { text-align: center; font-size: 1.5rem; color: var(--primary); }
+
+        .battery-grid {
+            display: grid;
+            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .battery-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid var(--primary);
+        }
+
+        .battery-header {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        label { font-size: 0.75rem; font-weight: bold; display: block; margin-bottom: 4px; }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        textarea { height: 60px; resize: vertical; }
+
+        button {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        button:active { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <h1>🔋 FRC Battery Tracker</h1>
+    <div id="app" class="battery-grid"></div>
+
+    <script>
+        const batteryCount = 9;
+        const app = document.getElementById('app');
+
+        // Load data or initialize empty
+        let batteryData = JSON.parse(localStorage.getItem('frc_batteries')) || {};
+
+        function createCards() {
+            for (let i = 1; i <= batteryCount; i++) {
+                const data = batteryData[i] || { match: '', pre: '', post: '', notes: '' };
+                
+                const card = document.createElement('div');
+                card.className = 'battery-card';
+                card.innerHTML = `
+                    <div class="battery-header">Battery #${i}</div>
+                    <div class="input-group">
+                        <div>
+                            <label>Match #</label>
+                            <input type="number" id="match-${i}" value="${data.match}" oninput="save(${i})">
+                        </div>
+                        <div>
+                            <label>Pre %</label>
+                            <input type="number" id="pre-${i}" value="${data.pre}" oninput="save(${i})">
+                        </div>
+                        <div>
+                            <label>Post %</label>
+                            <input type="number" id="post-${i}" value="${data.post}" oninput="save(${i})">
+                        </div>
+                    </div>
+                    <label>Notes (Health/Issues)</label>
+                    <textarea id="notes-${i}" oninput="save(${i})">${data.notes}</textarea>
+                    <button onclick="clearBattery(${i})">Reset Battery ${i}</button>
+                `;
+                app.appendChild(card);
+            }
+        }
+
+        window.save = (id) => {
+            batteryData[id] = {
+                match: document.getElementById(`match-${id}`).value,
+                pre: document.getElementById(`pre-${id}`).value,
+                post: document.getElementById(`post-${id}`).value,
+                notes: document.getElementById(`notes-${id}`).value
+            };
+            localStorage.setItem('frc_batteries', JSON.stringify(batteryData));
+        };
+
+        window.clearBattery = (id) => {
+            if(confirm(`Clear data for Battery #${id}?`)) {
+                document.getElementById(`match-${id}`).value = '';
+                document.getElementById(`pre-${id}`).value = '';
+                document.getElementById(`post-${id}`).value = '';
+                document.getElementById(`notes-${id}`).value = '';
+                save(id);
+            }
+        };
+
+        createCards();
+    </script>
+</body>
+</html>
