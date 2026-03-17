@@ -1,15 +1,34 @@
 {
-    "name": "FRC Battery Tracker",
-    "short_name": "BattTrack",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#f8fafc",
-    "theme_color": "#2563eb",
-    "icons": [
-      {
-        "src": "https://via.placeholder.com/192/2563eb/ffffff?text=BAT",
-        "sizes": "192x192",
-        "type": "image/png"
-      }
-    ]
-  }
+  "name": "FRC Battery Tracker",
+  "short_name": "Battery Track",
+  "start_url": "/Battery-Tracker/index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/Battery-Tracker/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/Battery-Tracker/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/Battery-Tracker/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "id": "org.ballardrobotics.batterytracker.pwa",
+  "description": "App for FRC competitions to track robot batteries (vibe coded)",
+  "dir": "auto",
+  "lang": "en",
+  "categories": [
+    "utilities"
+  ]
+}

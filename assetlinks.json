@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "org.ballardrobotics.batterytracker.android",
+        "sha256_cert_fingerprints": ["88:A7:87:3F:2C:D9:7A:C2:DA:B1:94:A7:99:0A:03:2E:8C:D6:B5:0A:7E:F7:DE:EB:27:CD:8B:95:25:E9:CC:3C"]
+      }
+    }]
