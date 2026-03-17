@@ -10,14 +10,18 @@
 
     <link rel="manifest" href="manifest.json">  
     <title>FRC Battery Tracker + Logs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FRC Battery Boss</title>
     <style>
         :root {
             --primary: #2563eb;
             --accent: #f59e0b;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
+            --bg: #0f172a; /* Dark mode for pit visibility */
+            --card: #1e293b;
+            --text: #f8fafc;
             --danger: #ef4444;
+            --success: #22c55e;
+            --border: #334155;
         }
 
         body {
@@ -25,111 +29,74 @@
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 10px;
-            overflow-x: hidden;
+            padding-top: 70px;
         }
 
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
+        /* --- Navigation --- */
+        .top-bar {
+            position: fixed; top: 0; left: 0; right: 0; height: 60px;
+            background: #020617; display: flex; align-items: center;
+            justify-content: space-around; z-index: 1000; border-bottom: 1px solid var(--border);
         }
 
-        h1 { font-size: 1.2rem; margin: 0; color: var(--primary); }
-
-        .battery-grid {
-            display: grid;
-            gap: 15px;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            margin-top: 10px;
+        .nav-item {
+            color: #64748b; background: none; border: none;
+            font-size: 0.7rem; font-weight: bold; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        /* --- Sidebar & Log Styles --- */
-        #sidebar {
-            position: fixed;
-            right: -300px;
-            top: 0;
-            width: 280px;
-            height: 100%;
-            background: #fff;
-            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-            transition: 0.3s;
-            z-index: 100;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
+        .nav-item.active { color: var(--primary); }
+        .nav-item span { font-size: 1.2rem; margin-bottom: 2px; }
 
-        #sidebar.open { right: 0; }
-
-        .log-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            border-top: 1px solid #eee;
-            margin-top: 10px;
-        }
-
-        .log-entry {
-            padding: 10px 0;
-            border-bottom: 1px solid #f1f5f9;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .log-content { flex-grow: 1; font-size: 0.85rem; }
-        .log-time { color: #64748b; font-size: 0.7rem; display: block; }
-
-        .delete-log-btn {
-            background: none;
-            border: none;
-            color: #cbd5e1;
-            font-size: 1.2rem;
-            padding: 0 5px;
-            cursor: pointer;
-            line-height: 1;
-        }
-
-        .delete-log-btn:hover { color: var(--danger); }
+        /* --- Views --- */
+        .view { display: none; padding: 15px; max-width: 500px; margin: 0 auto; }
+        .view.active { display: block; }
 
         /* --- UI Elements --- */
-        .battery-card {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border-left: 6px solid var(--primary);
-        }
-
-        .input-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        input, textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 1rem;
+        .card {
+            background: var(--card); border-radius: 12px; padding: 15px;
+            margin-bottom: 12px; border-left: 6px solid var(--primary);
         }
 
         .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
+            background: var(--primary); color: white; border: none;
+            padding: 12px; border-radius: 8px; font-weight: bold; width: 100%;
+            cursor: pointer; font-size: 1rem;
         }
 
-        .btn-log { background: var(--accent); }
-        .btn-clear { background: var(--danger); margin-top: 10px; font-size: 0.8rem; }
+        /* --- Input Fixes --- */
+        .grid-3 { display: flex; gap: 8px; margin: 10px 0; }
+        .grid-3 input { 
+            flex: 1; min-width: 0; padding: 10px 5px; text-align: center;
+            background: #0f172a; border: 1px solid var(--border); color: white; border-radius: 6px;
+        }
+        
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* --- Checkbox Styling --- */
+        .status-row { display: flex; gap: 10px; margin-top: 5px; }
+        .status-btn {
+            flex: 1; padding: 8px; border-radius: 6px; font-size: 0.8rem;
+            font-weight: bold; text-align: center; border: 1px solid var(--border);
+            background: #0f172a; color: #64748b; cursor: pointer;
+        }
+        .status-btn.active-charging { background: var(--accent); color: white; border-color: var(--accent); }
+        .status-btn.active-broken { background: var(--danger); color: white; border-color: var(--danger); }
+
+        /* --- Log & List Styles --- */
+        .log-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            background: var(--card); border-radius: 8px; margin-bottom: 8px;
+        }
+        .batt-badge {
+            background: var(--primary); color: white; width: 35px; height: 35px;
+            border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+
+        .checkout-btn {
+            background: var(--success); color: white; border: none;
+            padding: 8px 15px; border-radius: 6px; font-weight: bold;
+        }
     </style>
 
     <!-- PWA service worker (don't remove or it will break PWA) -->
@@ -137,107 +104,242 @@
 </head>
 <body>
 
-    <div class="header-container">
-        <h1>🔋 FRC Battery Tracker</h1>
-        <button class="btn btn-log" onclick="toggleSidebar()">View Logs</button>
+    <nav class="top-bar">
+        <button class="nav-item active" onclick="showView('home')"><span>🏠</span>HOME</button>
+        <button class="nav-item" onclick="showView('update')"><span>📝</span>PIT</button>
+        <button class="nav-item" onclick="showView('check')"><span>⚡</span>CHECKOUT</button>
+        <button class="nav-item" onclick="showView('logs')"><span>📋</span>LOGS</button>
+    </nav>
+
+    <div id="view-home" class="view active">
+        <div style="text-align: center; padding: 20px 0;">
+            <h1 style="margin: 0; color: var(--primary);">Battery Boss</h1>
+            
+            <div id="active-battery-display" style="margin: 20px 0; padding: 20px; background: var(--card); border-radius: 15px; border: 2px solid var(--border);">
+                <small id="status-label" style="color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Ready for Field</small>
+                <div id="current-batt-name" style="font-size: 3rem; font-weight: 900; color: white;">NONE</div>
+                
+                <div id="active-actions" style="display: none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+                    <p style="font-size: 0.8rem; color: #94a3b8;">Log Post-Match %</p>
+                    <div class="grid-3">
+                        <input type="number" id="quick-post-val" placeholder="Post %" style="background: #0f172a; border: 1px solid var(--primary); color: white; padding: 10px; border-radius: 6px;">
+                        <button class="btn" style="flex: 1; padding: 10px;" onclick="quickLogPost()">Save</button>
+                    </div>
+                    <button onclick="unCheckout()" style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 8px; border-radius: 6px; width: 100%; margin-top: 10px; font-weight: bold; font-size: 0.8rem;">
+                        ✕ Return to Pit (Un-Checkout)
+                    </button>
+                </div>
+            </div>
+            
+            <p style="color: #64748b;">Next Match Estimate: <strong id="home-next-match">--</strong></p>
+        </div>
     </div>
 
-    <div id="app" class="battery-grid"></div>
+    <div id="view-update" class="view">
+        <h2 style="margin: 0 0 15px 0;">Pit Inventory</h2>
+        <div id="update-container"></div>
+    </div>
 
-    <div id="sidebar">
-        <h3>Activity Log</h3>
-        <button class="btn" onclick="toggleSidebar()">Close</button>
-        <div id="log-list" class="log-container"></div>
-        <button class="btn btn-clear" onclick="clearAllLogs()">Clear All Logs</button>
+    <div id="view-check" class="view">
+        <h2 style="margin: 0 0 5px 0;">Checkout Battery</h2>
+        <p style="color: #64748b; font-size: 0.8rem; margin-bottom: 15px;">Sorted by highest charge. Broken/Charging batteries hidden.</p>
+        <div id="check-container"></div>
+    </div>
+
+    <div id="view-logs" class="view">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="margin:0">History</h2>
+            <button onclick="clearAllLogs()" style="color: var(--danger); background:none; border:none; font-weight:bold;">Clear</button>
+        </div>
+        <div id="log-container"></div>
     </div>
 
     <script>
-        const batteryCount = 9;
-        const app = document.getElementById('app');
-        const logList = document.getElementById('log-list');
-
+        const BATT_COUNT = 9;
         let batteryData = JSON.parse(localStorage.getItem('frc_batteries')) || {};
         let activityLogs = JSON.parse(localStorage.getItem('frc_logs')) || [];
+        let activeBattId = localStorage.getItem('frc_active_batt') || null;
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+            
+            const btnIndex = { 'home':0, 'update':1, 'check':2, 'logs':3 }[viewId];
+            document.querySelectorAll('.nav-item')[btnIndex].classList.add('active');
+
+            if(viewId === 'logs') renderLogs();
+            if(viewId === 'check') renderCheck();
+            if(viewId === 'home') updateHome();
+            if(viewId === 'update') renderUpdate();
         }
 
-        function addLog(message) {
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            activityLogs.unshift({ id: Date.now(), time, message }); 
-            saveAndRenderLogs();
+        function toggleStatus(id, type) {
+            if(!batteryData[id]) batteryData[id] = { charging: false, broken: false };
+            batteryData[id][type] = !batteryData[id][type];
+            save(id, type, batteryData[id][type]);
+            renderUpdate();
         }
 
-        function removeLog(logId) {
-            activityLogs = activityLogs.filter(log => log.id !== logId);
-            saveAndRenderLogs();
-        }
-
-        function clearAllLogs() {
-            if(confirm("Delete all history?")) {
-                activityLogs = [];
-                saveAndRenderLogs();
-            }
-        }
-
-        function saveAndRenderLogs() {
+        function save(id, field, val) {
+            if(!batteryData[id]) batteryData[id] = { match:'', pre:'', post:'', charging:false, broken:false };
+            batteryData[id][field] = val;
+            localStorage.setItem('frc_batteries', JSON.stringify(batteryData));
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            activityLogs.unshift({ id: Date.now(), batt: id, msg: `${field} updated`, time });
             localStorage.setItem('frc_logs', JSON.stringify(activityLogs));
-            logList.innerHTML = activityLogs.map(log => `
-                <div class="log-entry">
-                    <div class="log-content">
-                        <span class="log-time">${log.time}</span>
-                        ${log.message}
-                    </div>
-                    <button class="delete-log-btn" onclick="removeLog(${log.id})">&times;</button>
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('log-container');
+            container.innerHTML = activityLogs.map(log => `
+                <div class="log-item">
+                    <div class="batt-badge">#${log.batt}</div>
+                    <div style="flex-grow:1"><div style="font-size:0.9rem">${log.msg}</div><small style="color:#64748b">${log.time}</small></div>
                 </div>
             `).join('');
         }
 
-        function createCards() {
-            for (let i = 1; i <= batteryCount; i++) {
-                const data = batteryData[i] || { match: '', pre: '', post: '', notes: '' };
-                const card = document.createElement('div');
-                card.className = 'battery-card';
-                card.innerHTML = `
-                    <div style="font-weight:bold; margin-bottom:10px;">Battery #${i}</div>
-                    <div class="input-group">
-                        <div>
-                            <label style="font-size:0.7rem">Match</label>
-                            <input type="number" id="match-${i}" value="${data.match}" onchange="logChange(${i}, 'Match')">
-                        </div>
-                        <div>
-                            <label style="font-size:0.7rem">Pre %</label>
-                            <input type="number" id="pre-${i}" value="${data.pre}" onchange="logChange(${i}, 'Pre %')">
-                        </div>
-                        <div>
-                            <label style="font-size:0.7rem">Post %</label>
-                            <input type="number" id="post-${i}" value="${data.post}" onchange="logChange(${i}, 'Post %')">
-                        </div>
+        // Helper to keep logs consistent
+        function addLog(id, message) {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            activityLogs.unshift({ id: Date.now(), batt: id, msg: message, time });
+            localStorage.setItem('frc_logs', JSON.stringify(activityLogs));
+        }
+
+        function quickLogPost() {
+            const val = document.getElementById('quick-post-val').value;
+            if(!val) return alert("Enter a percentage first!");
+    
+                save(activeBattId, 'post', val);
+                addLog(activeBattId, `Post-Match logged: ${val}%`);
+    
+                // Clear the field and reset the home screen
+                document.getElementById('quick-post-val').value = '';
+                activeBattId = null;
+                localStorage.removeItem('frc_active_batt');
+                alert("Match Data Saved. Battery cleared from Robot.");
+                updateHome();
+        }
+
+        // 1. Updated Render Update (Pit Page)
+        function renderUpdate() {
+            const container = document.getElementById('update-container');
+            container.innerHTML = '';
+            for(let i=1; i<=BATT_COUNT; i++) {
+                const d = batteryData[i] || { match:'', pre:'', post:'', charging:false, broken:false };
+                const div = document.createElement('div');
+                div.className = 'card';
+                // Unique IDs for every input to prevent collisions
+                div.innerHTML = `
+                    <div style="font-weight:bold; color:var(--primary); margin-bottom: 5px;">BATTERY #${i}</div>
+                    <div class="grid-3">
+                        <input type="number" placeholder="Match" value="${d.match}" onchange="save(${i}, 'match', this.value)">
+                        <input type="number" placeholder="Pre%" value="${d.pre}" onchange="save(${i}, 'pre', this.value)">
+                        <input type="number" placeholder="Post%" value="${d.post}" onchange="save(${i}, 'post', this.value)">
                     </div>
-                    <textarea id="notes-${i}" placeholder="Notes..." onchange="logChange(${i}, 'Notes')">${data.notes}</textarea>
+                    <div class="status-row">
+                        <div class="status-btn ${d.charging ? 'active-charging' : ''}" onclick="toggleStatus(${i}, 'charging')">🔌 Charging</div>
+                        <div class="status-btn ${d.broken ? 'active-broken' : ''}" onclick="toggleStatus(${i}, 'broken')">⚠️ Broken</div>
+                    </div>
                 `;
-                app.appendChild(card);
+                container.appendChild(div);
             }
         }
 
-        window.logChange = (id, field) => {
-            const inputId = field.toLowerCase().split(' ')[0];
-            const val = document.getElementById(`${inputId}-${id}`).value;
+        // 2. Updated Render Check (Checkout Page)
+        function renderCheck() {
+            const container = document.getElementById('check-container');
+            const available = [];
+            for(let i=1; i<=BATT_COUNT; i++) {
+                const b = batteryData[i] || { post: 0, charging: false, broken: false };
+                if(!b.broken && !b.charging) {
+                    available.push({ id: i, ...b });
+                }
+            }
             
-            batteryData[id] = {
-                match: document.getElementById(`match-${id}`).value,
-                pre: document.getElementById(`pre-${id}`).value,
-                post: document.getElementById(`post-${id}`).value,
-                notes: document.getElementById(`notes-${id}`).value
-            };
-            
-            localStorage.setItem('frc_batteries', JSON.stringify(batteryData));
-            addLog(`Batt #${id}: ${field} -> ${val || 'empty'}`);
-        };
+            // Sort highest charge to lowest
+            available.sort((a, b) => (parseFloat(b.post) || 0) - (parseFloat(a.post) || 0));
 
-        createCards();
-        saveAndRenderLogs();
+            if(available.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding: 20px;">No batteries available.<br><small>Check "Pit" to see if they are all charging/broken.</small></p>';
+                return;
+            }
+
+            container.innerHTML = available.map(b => `
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong style="font-size:1.2rem">#${b.id}</strong><br>
+                        <small style="color:var(--success)">${b.post || '??'}% Last Charge</small>
+                    </div>
+                    <button class="checkout-btn" onclick="checkout(${b.id})">GO</button>
+                </div>
+            `).join('');
+        }
+
+        // 3. New Checkout & Un-Checkout Functions
+        function checkout(id) {
+            activeBattId = id;
+            localStorage.setItem('frc_active_batt', id);
+            
+            // Auto-remove from charging status when taking it to the field
+            if(batteryData[id]) {
+                batteryData[id].charging = false;
+                localStorage.setItem('frc_batteries', JSON.stringify(batteryData));
+            }
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            activityLogs.unshift({ id: Date.now(), batt: id, msg: "Checked out for Match", time });
+            localStorage.setItem('frc_logs', JSON.stringify(activityLogs));
+            
+            showView('home');
+        }
+
+        function unCheckout() {
+            if(!activeBattId) return;
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            activityLogs.unshift({ id: Date.now(), batt: activeBattId, msg: "Returned to Pit (Un-checked out)", time });
+            
+            activeBattId = null;
+            localStorage.removeItem('frc_active_batt');
+            localStorage.setItem('frc_logs', JSON.stringify(activityLogs));
+            updateHome();
+        }
+
+        // 4. Updated Home Display
+        function updateHome() {
+            const display = document.getElementById('current-batt-name');
+            const stats = document.getElementById('current-batt-stats');
+            
+            // Clear existing quick-actions if any
+            const existingBtn = document.getElementById('return-btn');
+            if(existingBtn) existingBtn.remove();
+
+            if(activeBattId && batteryData[activeBattId]) {
+                display.innerText = "BATT #" + activeBattId;
+                display.style.color = "var(--success)";
+                stats.innerHTML = `
+                    Last Match: ${batteryData[activeBattId].match || "N/A"}<br>
+                    <button id="return-btn" class="btn" style="background:var(--danger); margin-top:15px; font-size:0.8rem;" onclick="unCheckout()">Return to Pit</button>
+                `;
+            } else {
+                display.innerText = "NONE";
+                display.style.color = "#334155";
+                stats.innerText = "Select a battery to begin";
+            }
+            
+            let max = 0;
+            Object.values(batteryData).forEach(b => { if(b.match && parseInt(b.match) > max) max = parseInt(b.match); });
+            document.getElementById('home-next-match').innerText = max + 1;
+        }
+
+
+        
+
+        function clearAllLogs() { if(confirm("Clear history?")) { activityLogs=[]; localStorage.setItem('frc_logs', "[]"); renderLogs(); }}
+
+        updateHome();
     </script>
 </body>
 </html>
