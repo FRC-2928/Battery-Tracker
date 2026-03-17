@@ -1,13 +1,13 @@
 {
   "name": "FRC Battery Tracker",
   "short_name": "Battery Track",
-  "start_url": "/index.html",
+  "start_url": "/Battery-Tracker/index.html",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#2563eb",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "/Battery-Tracker/icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml"
     }
